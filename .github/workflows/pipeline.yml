@@ -1,18 +1,20 @@
 name: Model Retraining Pipeline
+
 on:
-    push:
-      paths:
-        - 'data/new_data.csv'
-    schedule:
-        - cron: '0 0 * * *'  # Run daily at midnight UTC
-    workflow_dispatch:  # Allow manual triggering
+  push:
+    paths:
+      - 'data/new_data.csv'
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
 permissions:
-    contents: write
-    packages: write
+  contents: write
+  packages: write
 
 env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   check_and_retrain:
@@ -31,13 +33,12 @@ jobs:
         pip install -r requirements.txt
 
     - name: Check for drift and retrain if necessary
-    #   run: some drift detection script 
       run: python retraining/retrain.py # for now we will assume we have detected drift and let the pipeline retrain 
       
     - name: Check for changes
       id: git-check
       run: |
-        git diff --exit-code || echo "::set-output name=changed::true"
+        git diff --exit-code || echo "changed=true" >> $GITHUB_OUTPUT
 
     - name: Commit changes if model was retrained
       if: steps.git-check.outputs.changed == 'true'
@@ -55,16 +56,22 @@ jobs:
         branch: ${{ github.ref }}
 
     - name: Login to Container Registry
-      uses: docker/login-action@v1
+      uses: docker/login-action@v2
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Image
-      if: steps.git-check.outputs.changed == 'true'
-      uses: docker/build-push-action@v2
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v4
       with:
-        context: . 
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v3
+      with:
+        context: .
         push: true
-        tags: latest 
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
