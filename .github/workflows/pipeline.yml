@@ -2,8 +2,9 @@ name: Model Retraining Pipeline
 
 on:
   push:
-    paths:
-      - 'data/new_data.csv'
+    # paths:
+      # - 'data/new_data.csv'# disabled for testing
+    branches: ['main']
   schedule:
     - cron: '0 0 * * *'  # Run daily at midnight UTC
   workflow_dispatch:  # Allow manual triggering
