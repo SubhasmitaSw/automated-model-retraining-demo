@@ -2,7 +2,7 @@
 
 This repository demonstrates an automated MLOps pipeline for continuous model retraining and learning. It detects data drift, retrains models, and publishes the model to github container registry using GitHub Actions.
 
-![meme](https://i.redd.it/50yslv18hse71.jpg)
+<img src="https://i.redd.it/50yslv18hse71.jpg" style="width: 300px;" alt="meme">
 
 ## Setup
 
